@@ -11,7 +11,8 @@ app.add_middleware(
   allow_origins=[
     "http://localhost:5173",
     "http://10.145.200.222:5173",
-    "https://md1h5l7g-5173.inc1.devtunnels.ms"
+    "https://md1h5l7g-5173.inc1.devtunnels.ms",
+    "https://syncplay-eight.vercel.app"
   ],
   allow_credentials=False,
   allow_methods=["*"],
