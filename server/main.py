@@ -19,6 +19,12 @@ app.add_middleware(
   allow_headers=["*"],
 )
 
+@app.get("/")
+def home():
+  return{
+    "message":"Backend Connected"
+  }
+
 @app.get("/api/test")
 def test():
   return {
