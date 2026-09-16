@@ -7,6 +7,7 @@ function App() {
   const [videoId, setVideoId] = useState("M7lc1UVf-VE");
   const [songs, setSongs] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [currentSong, setCurrentSong] = useState(null);
   const [roomId, setRoomId] = useState("");
   const [joinRoomId, setJoinRoomId] = useState("");
   const [joinMessage, setJoinMessage] = useState("");
@@ -28,6 +29,7 @@ function App() {
   const selectSong = (id, index) => {
     setVideoId(id);
     setCurrentIndex(index);
+    setCurrentSong(songs[index]);
     if (roomUsers > 1 && socket) {
       socket.send(
         JSON.stringify({
@@ -54,6 +56,7 @@ function App() {
       if (data.type === "song_change") {
         const song = data.song;
         setVideoId(song.id.videoId);
+        setCurrentSong(song);
         setSongs((currentSongs) => {
           const existingIndex = currentSongs.findIndex(
             (item) => item.id.videoId === song.id.videoId,
@@ -159,6 +162,7 @@ function App() {
 
       setVideoId(songs[nextIndex].id.videoId);
       setCurrentIndex(nextIndex);
+      setCurrentSong(songs[nextIndex]);
 
       if (roomUsers > 1 && socket) {
         socket.send(
@@ -181,6 +185,7 @@ function App() {
 
       setVideoId(songs[previousIndex].id.videoId);
       setCurrentIndex(previousIndex);
+      setCurrentSong(songs[previousIndex]);
       if (roomUsers > 1 && socket) {
         socket.send(
           JSON.stringify({
@@ -191,7 +196,6 @@ function App() {
       }
     }
   };
-  const currentSong = currentIndex >= 0 ? songs[currentIndex] : null;
   return (
     <div className="min-h-screen bg-[#121212] text-white px-6 py-10">
       <h1 className="text-3xl font-bold text-center mb-10">SyncPlay</h1>

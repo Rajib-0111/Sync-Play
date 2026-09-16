@@ -215,7 +215,7 @@ function YouTubePlayer({
       <div className="mt-6 text-center">
         <h2 className="text-lg font-semibold">Now Playing</h2>
 
-        <p className="text-white text-sm mt-2 truncate max-w-[320px]">
+        <p className="text-white text-sm mt-2 truncate w-full max-w-[220px] sm:max-w-[320px] px-2">
           {currentSong ? currentSong.snippet.title : "No song selected"}
         </p>
 
