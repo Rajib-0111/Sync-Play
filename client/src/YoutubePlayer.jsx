@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import VinylLoader from "./VinylLoader";
 
 function YouTubePlayer({
   videoId,
@@ -202,18 +203,13 @@ function YouTubePlayer({
   };
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
       <div className="hidden">
         <div id="youtube-player"></div>
       </div>
-      <div>
-        {currentSong && (
-          <img
-            src={currentSong.snippet.thumbnails.medium.url}
-            alt={currentSong.snippet.title}
-            className="w-65 h-65 object-cover rounded-xl mx-auto"
-          />
-        )}
+
+      <div className="w-65 h-65 flex items-center justify-center">
+        {currentSong && <VinylLoader isPlaying={isPlaying} />}
       </div>
 
       <div className="mt-6 text-center">

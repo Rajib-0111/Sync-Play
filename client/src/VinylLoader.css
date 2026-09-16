@@ -1,0 +1,97 @@
+.la-09 {
+  --label: #ff2d95;
+  --disc: 17rem;
+  --rpm: 1.8s;
+
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.la-09,
+.la-09 *,
+.la-09 *::before,
+.la-09 *::after {
+  box-sizing: border-box;
+}
+
+.la-09__deck {
+  position: relative;
+  width: var(--disc);
+  height: var(--disc);
+  isolation: isolate;
+}
+
+.la-09__disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+
+  background:
+    radial-gradient(circle, var(--label) 0 20%, transparent 20.5%),
+    radial-gradient(circle, #08080c 0 7%, transparent 7.5%),
+    repeating-radial-gradient(circle, #1c1c22 0 2px, #101015 2px 4px),
+    conic-gradient(
+      from 0deg,
+      #0c0c11,
+      #26262f 25%,
+      #0c0c11 50%,
+      #26262f 75%,
+      #0c0c11
+    );
+
+  box-shadow:
+    0 18px 34px -20px #000,
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+.la-09__disc.playing {
+  animation: la-09-spin var(--rpm) linear infinite;
+}
+
+.la-09__disc.paused {
+  animation: none;
+}
+@keyframes la-09-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.la-09__spindle {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #e8e6ef;
+
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.la-09__gloss {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 62%
+  );
+}
+
+@media (max-width: 500px) {
+  .la-09__deck {
+    --disc: 15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .la-09__disc {
+    animation: none;
+  }
+}
