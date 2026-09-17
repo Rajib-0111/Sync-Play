@@ -175,6 +175,9 @@ function App() {
   }, [roomUsers, socket]);
 
   const joinRoom = async () => {
+    
+     console.log("Join started:", performance.now());
+
     if (isJoining) return;
 
     if (!userName.trim()) {
