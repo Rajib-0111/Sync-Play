@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import SongSearch from "./SongSearch";
 import YouTubePlayer from "./YoutubePlayer";
 import IP from "./ip";
@@ -14,12 +14,15 @@ function App() {
   const [userName, setUserName] = useState("");
   const [roomUserNames, setRoomUserNames] = useState([]);
   const [joinMessage, setJoinMessage] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
   const [socket, setSocket] = useState(null);
   const [roomUsers, setRoomUsers] = useState(0);
   const [activeTab, setActiveTab] = useState("music");
   const [messages, setMessages] = useState([]);
   const [chatMessage, setChatMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
+
+  const socketRef = useRef(null);
 
   const handlePlayPause = (playing) => {
     if (roomUsers > 1 && socket) {
@@ -47,26 +50,40 @@ function App() {
   };
 
   const connectToRoom = (roomId) => {
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+      setSocket(null);
+    }
+
     const ws = new WebSocket(
       `wss://${IP}/ws/${roomId.toUpperCase()}?user_name=${encodeURIComponent(userName)}`,
     );
+
+    socketRef.current = ws;
+
     ws.onopen = () => {
       console.log("WebSocket Connected");
       setSocket(ws);
     };
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+
       console.log("Server:", data);
 
-      if (data.type == "room_status") {
+      if (data.type === "room_status") {
         setRoomUsers(data.users);
         setRoomUserNames(data.names);
         setHostName(data.host);
       }
+
       if (data.type === "song_change") {
         const song = data.song;
+
         setVideoId(song.id.videoId);
         setCurrentSong(song);
+
         setSongs((currentSongs) => {
           const existingIndex = currentSongs.findIndex(
             (item) => item.id.videoId === song.id.videoId,
@@ -84,6 +101,7 @@ function App() {
           return newSongs;
         });
       }
+
       if (data.type === "play_pause") {
         if (data.playing) {
           window.dispatchEvent(new CustomEvent("sync-play"));
@@ -91,6 +109,7 @@ function App() {
           window.dispatchEvent(new CustomEvent("sync-pause"));
         }
       }
+
       if (data.type === "seek") {
         window.dispatchEvent(
           new CustomEvent("sync-seek", {
@@ -98,6 +117,7 @@ function App() {
           }),
         );
       }
+
       if (data.type === "chat") {
         setMessages((currentMessages) => [...currentMessages, data]);
       }
@@ -105,6 +125,11 @@ function App() {
 
     ws.onclose = () => {
       console.log("WebSocket Disconnected");
+
+      if (socketRef.current === ws) {
+        socketRef.current = null;
+        setSocket(null);
+      }
     };
 
     ws.onerror = (error) => {
@@ -150,22 +175,48 @@ function App() {
   }, [roomUsers, socket]);
 
   const joinRoom = async () => {
+    if (isJoining) return;
+
     if (!userName.trim()) {
       setJoinMessage("Please enter your name first.");
       return;
     }
-    const response = await fetch(
-      `https://${IP}/api/rooms/join?room_id=${joinRoomId}&user_name=${encodeURIComponent(userName)}`,
-      {
-        method: "POST",
-      },
-    );
-    const data = await response.json();
-    if (response.ok) {
+
+    if (!joinRoomId.trim()) {
+      setJoinMessage("Please enter a Room ID.");
+      return;
+    }
+
+    setIsJoining(true);
+    setJoinMessage("");
+
+    try {
+      const response = await fetch(
+        `https://${IP}/api/rooms/join?room_id=${joinRoomId.trim().toUpperCase()}&user_name=${encodeURIComponent(userName)}`,
+        {
+          method: "POST",
+        },
+      );
+
+      console.log("API response:", performance.now());
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setJoinMessage(data.detail || "Room Not Found");
+        setIsJoining(false);
+        return;
+      }
+
       setJoinMessage(`Joined Room : ${data.room_id}`);
+
       connectToRoom(data.room_id);
-    } else {
-      setJoinMessage(data.detail);
+
+      setIsJoining(false);
+    } catch (error) {
+      console.log("Join error:", error);
+      setJoinMessage("Could not connect to server.");
+      setIsJoining(false);
     }
   };
 
@@ -360,7 +411,7 @@ function App() {
                   onClick={joinRoom}
                   className="w-full mt-4 bg-white text-black px-5 py-3 rounded-xl font-medium hover:bg-gray-200 transition"
                 >
-                  Join Room
+                  {isJoining ? "Joining..." : "Join Room"}
                 </button>
               </div>
             </div>

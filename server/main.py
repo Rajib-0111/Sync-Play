@@ -106,6 +106,35 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_name:str):
       for user in rooms[room_id]["users"]:
         if user != websocket:
             await user.send_json(data)
-  except Exception:
-    rooms[room_id]["users"].remove(websocket)
-    print("User disconnected. Users in room:",len(rooms[room_id]["users"]))
+
+  except Exception as e:
+    print("User disconnected:", e)
+
+    if websocket in rooms[room_id]["users"]:
+      rooms[room_id]["users"].remove(websocket)
+
+    if websocket in rooms[room_id]["names"]:
+      del rooms[room_id]["names"][websocket]
+
+    if rooms[room_id]["host"] == websocket:
+      if rooms[room_id]["users"]:
+          rooms[room_id]["host"] = rooms[room_id]["users"][0]
+      else:
+          rooms[room_id]["host"] = None
+
+    print(
+        "User disconnected. Users in room:",
+        len(rooms[room_id]["users"])
+    )
+
+    if rooms[room_id]["users"]:
+      for user in rooms[room_id]["users"]:
+        await user.send_json({
+          "type": "room_status",
+          "users": len(rooms[room_id]["users"]),
+          "names": list(rooms[room_id]["names"].values()),
+          "host": rooms[room_id]["names"][rooms[room_id]["host"]]
+        })
+    else:
+      del rooms[room_id]
+      print("Room deleted:", room_id)
