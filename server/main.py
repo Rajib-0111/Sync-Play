@@ -32,7 +32,7 @@ def test():
   } 
 
 @app.post("/api/rooms/create")
-def create_room():
+def create_room(user_name:str):
   room_id ="".join(
     random.choices(
       string.ascii_uppercase + string.digits,
@@ -42,6 +42,7 @@ def create_room():
   rooms[room_id]={
     "host":None,
     "users":[],
+    "names":{},
     "is_playing": False
   }
 
@@ -51,7 +52,7 @@ def create_room():
 
 
 @app.post("/api/rooms/join")
-def join_room(room_id:str):
+def join_room(room_id:str, user_name:str):
   room_id = room_id.upper()
   if room_id not in rooms:
     raise HTTPException(
@@ -64,7 +65,7 @@ def join_room(room_id:str):
   }
 
 @app.websocket("/ws/{room_id}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str):
+async def websocket_endpoint(websocket: WebSocket, room_id: str, user_name:str):
   await websocket.accept()
   room_id = room_id.upper()
   if room_id not in rooms:
@@ -74,12 +75,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
     await websocket.close()
     return
   rooms[room_id]["users"].append(websocket)
+  rooms[room_id]["names"][websocket] = user_name
+  if rooms[room_id]["host"] is None:
+    rooms[room_id]["host"] = websocket
   print("Users in room:",len(rooms[room_id]["users"]))
-
   for user in rooms[room_id]["users"]:
     await user.send_json({
         "type": "room_status",
-        "users": len(rooms[room_id]["users"])
+        "users": len(rooms[room_id]["users"]),
+        "names":list(rooms[room_id]["names"].values()),
+        "host": rooms[room_id]["names"][rooms[room_id]["host"]]
     })
   await websocket.send_json({
     "message": "WebSocket Connected",
@@ -95,8 +100,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 
       if data["type"] == "play_pause":
         rooms[room_id]["is_playing"] = data["playing"]
-
-
+      if data["type"] == "chat":
+        pass
+      
       for user in rooms[room_id]["users"]:
         if user != websocket:
             await user.send_json(data)
