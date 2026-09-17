@@ -21,8 +21,12 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [chatMessage, setChatMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
+  const [notification, setNotification] = useState("");
 
   const socketRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const notificationTimerRef = useRef(null);
+  const activeTabRef = useRef(activeTab);
 
   const handlePlayPause = (playing) => {
     if (roomUsers > 1 && socket) {
@@ -33,6 +37,18 @@ function App() {
         }),
       );
     }
+  };
+
+  const showNotification = (message) => {
+    setNotification(message);
+
+    if (notificationTimerRef.current) {
+      clearTimeout(notificationTimerRef.current);
+    }
+
+    notificationTimerRef.current = setTimeout(() => {
+      setNotification("");
+    }, 3000);
   };
 
   const selectSong = (id, index) => {
@@ -120,6 +136,18 @@ function App() {
 
       if (data.type === "chat") {
         setMessages((currentMessages) => [...currentMessages, data]);
+        if (activeTabRef.current !== "chat") {
+          showNotification(`New message from ${data.name}`);
+        }
+      }
+      if (data.type === "room_event") {
+        if (data.event === "join") {
+          showNotification(`${data.name} joined the room`);
+        }
+
+        if (data.event === "leave") {
+          showNotification(`${data.name} left the room`);
+        }
       }
     };
 
@@ -174,9 +202,18 @@ function App() {
     };
   }, [roomUsers, socket]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
   const joinRoom = async () => {
-    
-     console.log("Join started:", performance.now());
+    console.log("Join started:", performance.now());
 
     if (isJoining) return;
 
@@ -294,6 +331,11 @@ function App() {
   };
   return (
     <div className="min-h-screen bg-[#121212] text-white px-6 py-10">
+      {notification && (
+        <div className="fixed bottom-6 right-4 left-4 sm:left-auto sm:right-6 z-50 sm:max-w-sm bg-[#24102f] border border-[#ff2d95] text-white px-5 py-3 rounded-xl shadow-lg">
+          {notification}
+        </div>
+      )}
       <h1 className="text-3xl font-bold text-center mb-10">SyncPlay</h1>
 
       <div className="flex justify-center gap-3 mb-8">
@@ -531,6 +573,7 @@ function App() {
                       );
                     })
                   )}
+                  <div ref={chatEndRef} />
                 </div>
 
                 <div className="flex gap-3 mt-4">

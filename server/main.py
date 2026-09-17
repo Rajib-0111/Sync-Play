@@ -76,6 +76,15 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_name:str):
     return
   rooms[room_id]["users"].append(websocket)
   rooms[room_id]["names"][websocket] = user_name
+
+  for user in rooms[room_id]["users"]:
+    if user != websocket:
+      await user.send_json({
+        "type": "room_event",
+        "event": "join",
+        "name": user_name
+      })
+
   if rooms[room_id]["host"] is None:
     rooms[room_id]["host"] = websocket
   print("Users in room:",len(rooms[room_id]["users"]))
@@ -112,6 +121,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_name:str):
 
     if websocket in rooms[room_id]["users"]:
       rooms[room_id]["users"].remove(websocket)
+    
+    left_user = rooms[room_id]["names"].get(websocket, "User")
 
     if websocket in rooms[room_id]["names"]:
       del rooms[room_id]["names"][websocket]
@@ -121,20 +132,45 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_name:str):
           rooms[room_id]["host"] = rooms[room_id]["users"][0]
       else:
           rooms[room_id]["host"] = None
-
+    
+    if rooms[room_id]["users"]:
+      for user in rooms[room_id]["users"]:
+        try:
+            await user.send_json({
+                "type": "room_event",
+                "event": "leave",
+                "name": left_user
+            })
+        except Exception:
+          pass
+        
     print(
         "User disconnected. Users in room:",
         len(rooms[room_id]["users"])
     )
 
     if rooms[room_id]["users"]:
+
+      dead_users = []
+
       for user in rooms[room_id]["users"]:
-        await user.send_json({
-          "type": "room_status",
-          "users": len(rooms[room_id]["users"]),
-          "names": list(rooms[room_id]["names"].values()),
-          "host": rooms[room_id]["names"][rooms[room_id]["host"]]
-        })
+
+        try:
+          await user.send_json({
+            "type": "room_status",
+            "users": len(rooms[room_id]["users"]),
+            "names": list(rooms[room_id]["names"].values()),
+            "host": rooms[room_id]["names"][rooms[room_id]["host"]]
+          })
+        except Exception:
+          dead_users.append(user)
+
+      for user in dead_users:
+        if user in rooms[room_id]["users"]:
+          rooms[room_id]["users"].remove(user)
+        if user in rooms[room_id]["names"]:
+          del rooms[room_id]["names"][user]
     else:
       del rooms[room_id]
+
       print("Room deleted:", room_id)
