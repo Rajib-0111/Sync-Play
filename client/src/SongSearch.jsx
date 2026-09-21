@@ -1,12 +1,21 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 function SongSearch({ songs, setSongs, selectSong, addToQueue }) {
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   const [query, setQuery] = useState("");
 
+  const searchCache = useRef(new Map());
+
   const searchSongs = async () => {
     if (!query.trim()) {
+      return;
+    }
+
+    const searchQuery = query.trim().toLowerCase();
+
+    if (searchCache.current.has(searchQuery)) {
+      setSongs(searchCache.current.get(searchQuery));
       return;
     }
 
@@ -17,6 +26,7 @@ function SongSearch({ songs, setSongs, selectSong, addToQueue }) {
     const data = await response.json();
 
     if (data.items) {
+      searchCache.current.set(searchQuery, data.items);
       setSongs(data.items);
     }
   };
