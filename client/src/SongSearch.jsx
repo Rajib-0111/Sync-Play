@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function SongSearch({ songs, setSongs, selectSong }) {
+function SongSearch({ songs, setSongs, selectSong, addToQueue }) {
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   const [query, setQuery] = useState("");
@@ -50,8 +50,7 @@ function SongSearch({ songs, setSongs, selectSong }) {
         {songs.map((song, index) => (
           <div
             key={song.id.videoId || song.etag}
-            onClick={() => selectSong(song.id.videoId, index)}
-            className="bg-[#1f1f1f] p-3 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-[#292929] transition"
+            className="bg-[#1f1f1f] p-3 rounded-xl flex items-center gap-4"
           >
             <img
               src={song.snippet.thumbnails.medium.url}
@@ -60,6 +59,21 @@ function SongSearch({ songs, setSongs, selectSong }) {
             />
 
             <p className="text-white truncate min-w-0">{song.snippet.title}</p>
+            <div className="flex gap-2 ml-auto flex-shrink-0">
+              <button
+                onClick={() => selectSong(song.id.videoId, index)}
+                className="bg-white text-black px-3 py-2 rounded-lg"
+              >
+                ▶
+              </button>
+
+              <button
+                onClick={() => addToQueue(song)}
+                className="bg-[#ff2d95] text-white px-3 py-2 rounded-lg"
+              >
+                +
+              </button>
+            </div>
           </div>
         ))}
       </div>
